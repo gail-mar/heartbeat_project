@@ -1,0 +1,3 @@
+timestamp,video_filename,method,measured_bpm,reference_bpm,notes
+2026-07-03,unknown,green_baseline,55,82,"Backfilled from conversation (logging feature didn't exist yet); first real-world test"
+2026-07-03,unknown,green_baseline,42.9,64,"Backfilled from conversation; measured value landed right at the MIN_BPM=42 search-range edge, suggesting no real heartbeat frequency was found"
