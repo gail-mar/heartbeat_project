@@ -8,3 +8,5 @@ timestamp,video_filename,method,measured_bpm,reference_bpm,notes
 2026-07-03T20:26:23,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,
 2026-07-04T19:19:49,Video Project.mp4,pos,106.3,75,
 2026-07-04T19:20:17,Video Project.mp4,pos,106.3,,
+2026-07-06T11:00:07,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,
+2026-07-06T11:10:06,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,

@@ -7,6 +7,8 @@
     body { font-family: sans-serif; max-width: 480px; margin: 60px auto; text-align: center; }
     .result { font-size: 2rem; margin-top: 20px; }
     .error { color: #b00020; margin-top: 20px; }
+    .monitor { background: #111; border-radius: 6px; margin-top: 20px; }
+    .monitor svg { width: 100%; height: auto; display: block; }
   </style>
 </head>
 <body>
@@ -23,11 +25,26 @@
     </select><br><br>
     <label>Actual BPM from another device (optional, for comparison): </label>
     <input type="number" step="0.1" name="reference_bpm"><br><br>
+
+    <p style="text-align:left; margin-bottom: 4px;"><small>Only used when Algorithm = POS, otherwise ignored:</small></p>
+    <label>POS window size, in seconds: </label>
+    <input type="number" step="0.1" min="0.1" name="pos_window_seconds" value="1.6"><br><br>
+    <label>POS overlap, in %: </label>
+    <input type="number" step="1" min="0" max="99" name="pos_overlap_percent" value="98"><br><br>
+
     <button type="submit">Analyze</button>
   </form>
 
   {% if bpm %}
     <div class="result">Estimated heart rate: {{ bpm }} BPM</div>
+  {% endif %}
+
+  {% if chart_svg %}
+    <div class="monitor">
+      <svg viewBox="0 0 600 190">
+        {{ chart_svg | safe }}
+      </svg>
+    </div>
   {% endif %}
 
   {% if error %}

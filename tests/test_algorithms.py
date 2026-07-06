@@ -62,3 +62,15 @@ def test_pos_rejects_shared_motion_artifact():
     r, g, b, fps, motion_bpm, true_bpm = _shared_motion_case()
     bpm = compute_bpm(pos_signal(r, g, b, fps), fps)
     assert bpm == pytest.approx(true_bpm, abs=1.0)
+
+
+@pytest.mark.parametrize("window_seconds,step_frames", [
+    (1.6, 1),    # default: maximum overlap
+    (1.6, 24),   # ~50% overlap (half of a ~48-frame window at 30fps)
+    (1.6, 48),   # ~0% overlap: non-overlapping back-to-back windows
+    (3.0, 1),    # a longer window
+])
+def test_pos_signal_works_with_custom_window_and_overlap(window_seconds, step_frames):
+    r, g, b, fps, motion_bpm, true_bpm = _shared_motion_case()
+    bpm = compute_bpm(pos_signal(r, g, b, fps, window_seconds=window_seconds, step_frames=step_frames), fps)
+    assert bpm == pytest.approx(true_bpm, abs=1.0)

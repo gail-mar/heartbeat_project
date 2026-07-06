@@ -27,22 +27,34 @@ def chrom_signal(r_signal, g_signal, b_signal, fps):
     return x - alpha * y
 
 
-def pos_signal(r_signal, g_signal, b_signal, fps):
+# How long each sliding window is, in seconds. Longer = more stable
+# normalization statistics per window, but slower to react to changes.
+POS_WINDOW_SECONDS = 1.6
+
+# How many frames the window advances each step. 1 = maximum overlap (every
+# frame gets a contribution from `window_len` different windows, the most
+# responsive but most compute). Set this to `window_len` for non-overlapping
+# chunks (0% overlap), or `window_len // 2` for the classic "50% overlap"
+# scheme.
+POS_STEP_FRAMES = 1
+
+
+def pos_signal(r_signal, g_signal, b_signal, fps,
+                window_seconds=POS_WINDOW_SECONDS, step_frames=POS_STEP_FRAMES):
     """POS (Wang et al., 2016), sliding-window version matching the original
     paper: instead of normalizing against one average over the whole video,
-    slide a short window (1.6s) across the signal, normalize/project each
-    window against its OWN local statistics, and overlap-add the results.
-    This keeps the signal responsive to lighting/motion that drifts over
-    the course of the video, which a single global average would miss."""
+    slide a short window across the signal, normalize/project each window
+    against its OWN local statistics, and overlap-add the results. This
+    keeps the signal responsive to lighting/motion that drifts over the
+    course of the video, which a single global average would miss."""
     rgb = np.stack([np.array(r_signal), np.array(g_signal), np.array(b_signal)], axis=1)  # frames x 3
     n_frames = rgb.shape[0]
-    window_len = max(2, int(round(1.6 * fps)))
+    window_len = max(2, int(round(window_seconds * fps)))
+    step_frames = max(1, step_frames)
 
     h = np.zeros(n_frames)
-    for n in range(n_frames):
+    for n in range(window_len, n_frames, step_frames):
         m = n - window_len
-        if m < 0:
-            continue
 
         window = rgb[m:n, :]  # window_len x 3
         normalized = window / np.mean(window, axis=0)  # each channel vs its OWN mean in this window
