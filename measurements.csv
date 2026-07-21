@@ -10,3 +10,29 @@ timestamp,video_filename,method,measured_bpm,reference_bpm,notes
 2026-07-04T19:20:17,Video Project.mp4,pos,106.3,,
 2026-07-06T11:00:07,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,
 2026-07-06T11:10:06,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,
+2026-07-08T12:02:27,WIN_20260703_19_41_20_Pro.mp4,pos,81.5,64,roi_mode=forehead_cheeks
+2026-07-08T12:03:15,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,
+2026-07-08T16:30:50,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,64,roi_mode=forehead_cheeks
+2026-07-08T16:31:23,Video Project.mp4,pos,70.1,75,roi_mode=forehead_cheeks
+2026-07-12T11:49:04,vid.avi,pos,76.0,,"roi_mode=forehead_cheeks, video_cropped_to_fit"
+2026-07-12T12:02:31,vid.avi,pos,84.3,80,"roi_mode=forehead_cheeks, video_cropped_to_fit"
+2026-07-12T12:05:51,20260712120509.mp4,green_baseline,42.4,,
+2026-07-12T14:59:39,20260712120509.mp4,green_baseline,42.4,,
+2026-07-12T15:02:13,WIN_20260703_19_41_20_Pro.mp4,green_baseline,49.3,,
+2026-07-12T15:02:17,WIN_20260703_19_41_20_Pro.mp4,green_baseline,103.0,,
+2026-07-12T15:02:21,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T15:06:03,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T15:13:16,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T15:13:31,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T15:13:33,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T16:42:43,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T16:43:12,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:25:14,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:28:52,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:32:20,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:32:22,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:40:53,test.mp4,chrom,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:47:49,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:54:13,test.mp4,chrom,62.2,,roi_mode=forehead_cheeks
+2026-07-12T17:58:15,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks
+2026-07-12T18:35:36,WIN_20260703_19_41_20_Pro.mp4,pos,62.2,,roi_mode=forehead_cheeks

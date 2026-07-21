@@ -79,14 +79,16 @@ METHODS = {
 }
 
 
-def compute_bpm(signal, fps):
-    """Turn a pulse-like signal into a BPM estimate using an FFT."""
-    signal = np.asarray(signal, dtype=float)
-    if signal.size == 0:
-        raise ValueError("No face was detected in this video.")
-    if len(signal) < fps * 2:
-        raise ValueError("Video too short to estimate a heart rate.")
+def _bpm_from_fft(signal, fps, near_bpm=None, max_jump=None):
+    """Core FFT peak-picking shared by compute_bpm and
+    compute_bpm_timeseries: assumes the caller already checked there are
+    enough samples.
 
+    If near_bpm/max_jump are given, the search is restricted to within
+    max_jump of near_bpm first (so a window doesn't lock onto an unrelated
+    motion/lighting artifact peak just because it's momentarily stronger),
+    falling back to the full MIN_BPM..MAX_BPM range if nothing plausible
+    exists in that narrower band -- e.g. right after a genuine, fast change."""
     signal = signal - np.mean(signal)  # remove the constant brightness offset
     signal = signal * np.hamming(len(signal))  # taper edges to reduce FFT artifacts
 
@@ -95,9 +97,82 @@ def compute_bpm(signal, fps):
     bpm_per_freq = freqs * 60
 
     valid = (bpm_per_freq >= MIN_BPM) & (bpm_per_freq <= MAX_BPM)
+    if near_bpm is not None and max_jump is not None:
+        constrained = valid & (bpm_per_freq >= near_bpm - max_jump) & (bpm_per_freq <= near_bpm + max_jump)
+        if np.any(constrained):
+            valid = constrained
+
     if not np.any(valid):
         raise ValueError("No plausible heart rate found in this video.")
 
     peak_index = np.argmax(fft_magnitudes[valid])
     bpm = bpm_per_freq[valid][peak_index]
     return round(float(bpm), 1)
+
+
+def compute_bpm(signal, fps):
+    """Turn a pulse-like signal into a single BPM estimate using an FFT."""
+    signal = np.asarray(signal, dtype=float)
+    if signal.size == 0:
+        raise ValueError("No face was detected in this video.")
+    if len(signal) < fps * 2:
+        raise ValueError("Video too short to estimate a heart rate.")
+    return _bpm_from_fft(signal, fps)
+
+
+# Defaults for compute_bpm_timeseries: 8s gives the FFT enough cycles at
+# even the low end of MIN_BPM to resolve a clean peak; 1s steps make for a
+# readout that updates roughly once a second during playback.
+BPM_TIMESERIES_WINDOW_SECONDS = 8.0
+BPM_TIMESERIES_STEP_SECONDS = 1.0
+
+# Real heart rate doesn't jump tens of BPM between one window and the next
+# (1s apart) -- if it looks like it did, that's almost always the FFT
+# locking onto a different, unrelated peak (motion/lighting artifact or a
+# harmonic) rather than a genuine change. Cap how far consecutive windows
+# are allowed to move before falling back to the unconstrained peak.
+BPM_TIMESERIES_MAX_JUMP = 15.0
+
+
+def compute_bpm_timeseries(signal, fps,
+                            window_seconds=BPM_TIMESERIES_WINDOW_SECONDS,
+                            step_seconds=BPM_TIMESERIES_STEP_SECONDS,
+                            max_jump=BPM_TIMESERIES_MAX_JUMP,
+                            timestamps=None):
+    """Slide a window across the pulse signal and compute BPM in each one,
+    to track how heart rate changes over the course of the video (e.g. for
+    a live readout synced to video playback). Returns a list of
+    (timestamp_seconds, bpm) pairs, timestamped at each window's center.
+    Windows too short for a reliable estimate are skipped. Each window's
+    peak is biased toward staying near the previous window's BPM (see
+    BPM_TIMESERIES_MAX_JUMP) so the readout doesn't swing wildly between
+    unrelated frequency peaks.
+
+    If timestamps (one per signal sample, e.g. from extract_rgb_signal) is
+    given, each window is timestamped using the real timestamp at its
+    center sample instead of assuming evenly-spaced frames -- necessary
+    for variable-frame-rate video, where index/fps drifts from the actual
+    playback time a browser would report for that same sample."""
+    signal = np.asarray(signal, dtype=float)
+    window_len = max(1, int(round(window_seconds * fps)))
+    step_len = max(1, int(round(step_seconds * fps)))
+    min_len = fps * 2
+
+    results = []
+    previous_bpm = None
+    for start in range(0, len(signal) - window_len + 1, step_len):
+        window = signal[start:start + window_len]
+        if len(window) < min_len:
+            continue
+        try:
+            bpm = _bpm_from_fft(window, fps, near_bpm=previous_bpm, max_jump=max_jump)
+        except ValueError:
+            continue
+        previous_bpm = bpm
+        center_idx = start + len(window) // 2
+        if timestamps is not None:
+            center_time = timestamps[min(center_idx, len(timestamps) - 1)]
+        else:
+            center_time = center_idx / fps
+        results.append((round(center_time, 2), bpm))
+    return results

@@ -8,8 +8,9 @@ version = "0.1.0"
 description = "Remote heart-rate estimation from face video (rPPG)"
 requires-python = ">=3.9"
 dependencies = [
-    "opencv-python",
+    "opencv-contrib-python",
     "numpy",
+    "mediapipe",
 ]
 
 [project.optional-dependencies]

@@ -3,52 +3,111 @@
 <head>
   <meta charset="utf-8">
   <title>Heartbeat from Video</title>
-  <style>
-    body { font-family: sans-serif; max-width: 480px; margin: 60px auto; text-align: center; }
-    .result { font-size: 2rem; margin-top: 20px; }
-    .error { color: #b00020; margin-top: 20px; }
-    .monitor { background: #111; border-radius: 6px; margin-top: 20px; }
-    .monitor svg { width: 100%; height: auto; display: block; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <h1>Heartbeat from Video</h1>
-  <p>Upload a short video of a face (steady lighting, minimal movement works best).</p>
+  <p class="subtitle">Upload a short video of a face. Steady lighting and minimal movement work best.</p>
 
-  <form method="post" enctype="multipart/form-data">
-    <input type="file" name="video" accept="video/*" required><br><br>
-    <label>Algorithm: </label>
-    <select name="method">
-      <option value="green_baseline">Baseline (green channel only)</option>
-      <option value="chrom">CHROM</option>
-      <option value="pos">POS</option>
-    </select><br><br>
-    <label>Actual BPM from another device (optional, for comparison): </label>
-    <input type="number" step="0.1" name="reference_bpm"><br><br>
+  <nav class="tabs">
+    <a href="/" class="active">Upload video</a>
+    <a href="/webcam">Live webcam</a>
+  </nav>
 
-    <p style="text-align:left; margin-bottom: 4px;"><small>Only used when Algorithm = POS, otherwise ignored:</small></p>
-    <label>POS window size, in seconds: </label>
-    <input type="number" step="0.1" min="0.1" name="pos_window_seconds" value="1.6"><br><br>
-    <label>POS overlap, in %: </label>
-    <input type="number" step="1" min="0" max="99" name="pos_overlap_percent" value="98"><br><br>
+  <div class="card">
+    <form method="post" enctype="multipart/form-data">
+      <div class="field">
+        <label for="video">Video file</label>
+        <input id="video" type="file" name="video" accept="video/*" required>
+      </div>
 
-    <button type="submit">Analyze</button>
-  </form>
+      <div class="field-row">
+        <div class="field">
+          <label for="method">Algorithm</label>
+          <select id="method" name="method">
+            <option value="green_baseline">Baseline (green channel)</option>
+            <option value="chrom">CHROM</option>
+            <option value="pos">POS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="roi_mode">Face region</label>
+          <select id="roi_mode" name="roi_mode">
+            <option value="full_face">Whole face</option>
+            <option value="forehead_cheeks">Forehead + cheeks</option>
+          </select>
+        </div>
+      </div>
 
-  {% if bpm %}
-    <div class="result">Estimated heart rate: {{ bpm }} BPM</div>
-  {% endif %}
+      <div class="field">
+        <label for="reference_bpm">Actual BPM from another device (optional, for comparison)</label>
+        <input id="reference_bpm" type="number" step="0.1" name="reference_bpm">
+      </div>
 
-  {% if chart_svg %}
-    <div class="monitor">
-      <svg viewBox="0 0 600 190">
-        {{ chart_svg | safe }}
-      </svg>
-    </div>
-  {% endif %}
+      <div class="hint">Only used when Algorithm = POS, otherwise ignored:</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="pos_window_seconds">POS window size (seconds)</label>
+          <input id="pos_window_seconds" type="number" step="0.1" min="0.1" name="pos_window_seconds" value="1.6">
+        </div>
+        <div class="field">
+          <label for="pos_overlap_percent">POS overlap (%)</label>
+          <input id="pos_overlap_percent" type="number" step="1" min="0" max="99" name="pos_overlap_percent" value="98">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit">Analyze</button>
+      </div>
+    </form>
+  </div>
 
   {% if error %}
     <div class="error">{{ error }}</div>
+  {% endif %}
+
+  {% if bpm %}
+    <div class="card">
+      <div class="result-label">Estimated heart rate</div>
+      <div class="result">{{ bpm }}<span class="unit">BPM</span></div>
+
+      {% if video_url %}
+        <div class="player">
+          <video id="pulse-video" src="{{ video_url }}" controls></video>
+          <div class="live-bpm"><span class="live-bpm-label">Live</span><span id="live-bpm-value">--</span> BPM</div>
+        </div>
+      {% endif %}
+
+      {% if chart_svg %}
+        <div class="monitor">
+          <svg viewBox="0 0 600 190">
+            {{ chart_svg | safe }}
+          </svg>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if video_url %}
+    <script>
+      const bpmSeries = {{ (bpm_timeseries or []) | tojson }};
+      const video = document.getElementById('pulse-video');
+      const liveBpmEl = document.getElementById('live-bpm-value');
+
+      function latestAt(series, t) {
+        let current = null;
+        for (const [ts, value] of series) {
+          if (ts > t) break;
+          current = value;
+        }
+        return current;
+      }
+
+      video.addEventListener('timeupdate', () => {
+        const bpm = latestAt(bpmSeries, video.currentTime);
+        liveBpmEl.textContent = bpm !== null ? bpm.toFixed(1) : '--';
+      });
+    </script>
   {% endif %}
 </body>
 </html>

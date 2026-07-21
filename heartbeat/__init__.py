@@ -1,6 +1,7 @@
-from .detection import extract_rgb_signal
+from .detection import extract_rgb_signal, ROI_MODES, render_roi_debug_frame
 from .algorithms import (
     compute_bpm,
+    compute_bpm_timeseries,
     green_baseline_signal,
     chrom_signal,
     pos_signal,
@@ -12,10 +13,14 @@ from .algorithms import (
 )
 from .logging_utils import log_measurement, LOG_FIELDS, DEFAULT_LOG_PATH
 from .charts import signal_to_svg_points, render_svg_chart, CHART_WIDTH, CHART_HEIGHT
+from .webcam import WebcamSession
 
 __all__ = [
     "extract_rgb_signal",
+    "ROI_MODES",
+    "render_roi_debug_frame",
     "compute_bpm",
+    "compute_bpm_timeseries",
     "green_baseline_signal",
     "chrom_signal",
     "pos_signal",
@@ -31,4 +36,5 @@ __all__ = [
     "render_svg_chart",
     "CHART_WIDTH",
     "CHART_HEIGHT",
+    "WebcamSession",
 ]

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Live Webcam Heart Rate</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>Live Webcam Heart Rate</h1>
+  <p class="subtitle">Look at your camera with steady lighting. It takes a few seconds to get an initial reading.</p>
+
+  <nav class="tabs">
+    <a href="/">Upload video</a>
+    <a href="/webcam" class="active">Live webcam</a>
+  </nav>
+
+  <div class="card">
+    <div class="player">
+      <video id="webcam-video" autoplay muted playsinline></video>
+      <canvas id="capture-canvas" style="display:none;"></canvas>
+      <div class="live-bpm"><span class="live-bpm-label">Live</span><span id="bpm-value">--</span> BPM</div>
+      <div class="status" id="status-text"></div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="method-select">Algorithm</label>
+        <select id="method-select">
+          <option value="green_baseline">Baseline (green channel)</option>
+          <option value="chrom">CHROM</option>
+          <option value="pos" selected>POS</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="roi-select">Face region</label>
+        <select id="roi-select">
+          <option value="full_face" selected>Whole face</option>
+          <option value="forehead_cheeks">Forehead + cheeks</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="start-btn">Start Camera</button>
+      <button id="stop-btn" class="secondary" disabled>Stop</button>
+    </div>
+  </div>
+
+  <div class="error" id="error-text" style="display:none;"></div>
+
+  <a class="back-link" href="/">&larr; Back to video upload</a>
+
+  <script>
+    const video = document.getElementById('webcam-video');
+    const canvas = document.getElementById('capture-canvas');
+    const bpmEl = document.getElementById('bpm-value');
+    const statusEl = document.getElementById('status-text');
+    const errorEl = document.getElementById('error-text');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+
+    let stream = null;
+    let captureTimer = null;
+    let sending = false; // avoid overlapping requests if one is slow
+
+    const CAPTURE_INTERVAL_MS = 100; // ~10 fps -- covers up to 300 BPM (Nyquist)
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = msg ? 'block' : 'none';
+    }
+
+    function captureAndSend() {
+      if (sending || !video.videoWidth) return;
+      sending = true;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
+      canvas.toBlob((blob) => {
+        if (!blob) { sending = false; return; }
+        const formData = new FormData();
+        formData.append('frame', blob, 'frame.jpg');
+        formData.append('method', document.getElementById('method-select').value);
+        formData.append('roi_mode', document.getElementById('roi-select').value);
+
+        fetch('/api/webcam/frame', { method: 'POST', body: formData })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.error) {
+              showError(data.error);
+              return;
+            }
+            showError('');
+            if (data.bpm !== null && data.bpm !== undefined) {
+              bpmEl.textContent = data.bpm.toFixed(1);
+            }
+            statusEl.textContent = data.face_detected
+              ? `Tracking face (${data.sample_count} samples buffered)`
+              : 'No face detected';
+          })
+          .catch((e) => showError('Request failed: ' + e))
+          .finally(() => { sending = false; });
+      }, 'image/jpeg', 0.8);
+    }
+
+    async function start() {
+      showError('');
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      } catch (e) {
+        showError('Could not access camera: ' + e);
+        return;
+      }
+      video.srcObject = stream;
+      bpmEl.textContent = '--';
+      await fetch('/api/webcam/start', { method: 'POST' });
+      captureTimer = setInterval(captureAndSend, CAPTURE_INTERVAL_MS);
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    }
+
+    function stop() {
+      if (captureTimer) clearInterval(captureTimer);
+      captureTimer = null;
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+      video.srcObject = null;
+      statusEl.textContent = '';
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+
+    startBtn.addEventListener('click', start);
+    stopBtn.addEventListener('click', stop);
+    window.addEventListener('beforeunload', stop);
+  </script>
+</body>
+</html>

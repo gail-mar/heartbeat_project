@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROI Debug</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>ROI Debug View</h1>
+  <p class="subtitle">Upload a video to see the detected face box and the forehead/cheek sample regions on one frame.</p>
+
+  <div class="card">
+    <form method="post" enctype="multipart/form-data">
+      <div class="field">
+        <label for="video">Video file</label>
+        <input id="video" type="file" name="video" accept="video/*" required>
+      </div>
+      <div class="actions">
+        <button type="submit">Show regions</button>
+      </div>
+    </form>
+
+    <div class="hint" style="margin-top:16px;">
+      Blue = detected face box &nbsp;&middot;&nbsp; Green = forehead region &nbsp;&middot;&nbsp; Red = cheek regions
+    </div>
+  </div>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <a class="back-link" href="/">&larr; Back to video upload</a>
+</body>
+</html>
